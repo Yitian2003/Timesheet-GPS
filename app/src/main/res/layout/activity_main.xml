@@ -73,7 +73,7 @@
                                 android:id="@+id/tvUsername"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Bruce Yeh"
+                                android:text="Bruce Lee"
                                 android:textColor="#ffffff"
                                 android:textSize="24sp" />
 
@@ -81,7 +81,7 @@
                                 android:id="@+id/tvEmail"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="bruce.yeh.nz@gmail.com"
+                                android:text="bruce.lee.nz@gmail.com"
                                 android:textColor="#bbbbbb"
                                 android:textSize="12sp" />
 
