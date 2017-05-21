@@ -10,6 +10,7 @@ public class UserProfileModel {
     private String email;
     private String role;
     private String imageString;
+    private String employeeNo;
 
     public String getFirstName() {return firstName;}
     public void setFirstName(String firstName) {this.firstName = firstName;}
@@ -21,4 +22,6 @@ public class UserProfileModel {
     public void setRole(String role) {this.role = role;}
     public String getImageString() {return imageString;}
     public void setImageString(String imageString) {this.imageString = imageString;}
+    public String getEmployeeNo() {return employeeNo;}
+    public void setEmployeeNo(String employeeNo) {this.employeeNo = employeeNo;}
 }
