@@ -8,4 +8,3 @@
 <br>
 ![alt tag](https://github.com/Yitian2003/Timesheet-GPS/blob/master/demo.gif)
 </br>
-
