@@ -1,21 +1,17 @@
 package com.witlife.timesheet.activity;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Environment;
-import android.support.annotation.NonNull;
+import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.os.Bundle;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.support.v4.view.ViewPager;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -23,150 +19,147 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.witlife.timesheet.R;
-import com.witlife.timesheet.adapter.HeaderItem;
-import com.witlife.timesheet.adapter.JobItem;
-import com.witlife.timesheet.adapter.ListItem;
-import com.witlife.timesheet.adapter.RecyclerAdapter;
+import com.witlife.timesheet.adapter.ViewPagerAdapter;
 import com.witlife.timesheet.model.JobModel;
+import com.witlife.timesheet.model.UserProfileModel;
 import com.witlife.timesheet.util.DateUtil;
-import com.witlife.timesheet.util.EmailUtil;
+import com.witlife.timesheet.util.SPUtil;
 
-import java.io.File;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.TreeMap;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class MainActivity extends BaseActivity {
 
     TabLayout tlUserProfileTabs;
-    RecyclerView recyclerView;
-    RecyclerAdapter recyclerAdapter;
-    private List<JobModel> jobs;
     TreeMap<Date, List<JobModel>> jobMap;
-    private List<ListItem> items;
     TextView tvHoursWeek;
     TextView tvHoursToday;
     TextView tvUsername;
-
+    TextView tvEmail;
+    TextView tvRole;
+    CircleImageView ivProfilePhoto;
+    Button btnEditProfile;
+    ViewPager viewPager;
+    ViewPagerAdapter viewPagerAdapter;
     FloatingActionButton btnAdd;
-    public static String SAVE_JOB_MODEL = "Job Model";
+
+    private int PICK_IMAGE_REQUEST = 68;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        setupTabs();
         initialView();
         setOnListener();
     }
 
     private void initialView() {
         btnAdd = (FloatingActionButton) findViewById(R.id.btnAdd);
-        recyclerView = (RecyclerView) findViewById(R.id.rvJobList);
         tvHoursToday = (TextView) findViewById(R.id.tvHoursToday);
         tvHoursWeek = (TextView) findViewById(R.id.tvHoursWeek);
         tvUsername = (TextView) findViewById(R.id.tvUsername);
-        List<ListItem> items = new ArrayList<>();
+        tvEmail = (TextView)findViewById(R.id.tvEmail);
+        tvRole = (TextView)findViewById(R.id.tvRole);
+        btnEditProfile = (Button) findViewById(R.id.btnEditProfile);
+        viewPager = (ViewPager) findViewById(R.id.viewPager);
+        tlUserProfileTabs = (TabLayout) findViewById(R.id.tlUserProfileTabs);
+        ivProfilePhoto = (CircleImageView) findViewById(R.id.ivProfilePhoto);
+        viewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager());
+        viewPager.setAdapter(viewPagerAdapter);
+        tlUserProfileTabs.setupWithViewPager(viewPager);
+        setupTabs();
+        setupProfile();
 
-        SharedPreferences mPrefs = getApplicationContext().getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
-        String json = mPrefs.getString(SAVE_JOB_MODEL, "");
+        jobMap = SPUtil.readFromSharePreferences(getApplicationContext());
 
-        // read data to map
-        if (json.isEmpty()) {
-            jobMap = new TreeMap<>();
-            jobs = new ArrayList<>();
-
-        } else {
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                jobMap = mapper.readValue(json,
-                        new TypeReference<TreeMap<Date, List<JobModel>>>() {
-                        });
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-            }
-        }
-
-        sortedMap();
-
-        // set today total hours
         tvHoursToday.setText(String.format("%.2f", calculateTodayHours()));
         // set weekly total hours
         tvHoursWeek.setText(String.format("%.2f", calculateWeekHours()));
-        //tvHoursWeek.setText(String.valueOf(calculateWeekHours()));
-
-        // convert map to list
-        for (Date date : jobMap.keySet()) {
-            HeaderItem header = new HeaderItem(date);
-            items.add(header);
-
-            for (JobModel job : jobMap.get(date)) {
-                JobItem item = new JobItem(job);
-                items.add(item);
-            }
-        }
-
-        // set recycler adapter
-        if (items != null) {
-            recyclerAdapter = new RecyclerAdapter(this, items);
-            recyclerView.setAdapter(recyclerAdapter);
-            recyclerView.setItemAnimator(new DefaultItemAnimator());
-            LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.this, LinearLayoutManager.VERTICAL, false);
-            recyclerView.setLayoutManager(linearLayoutManager);
-        }
     }
 
     private void setOnListener() {
         btnAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                finish();
                 Intent intent = new Intent(MainActivity.this, AddJobActivity.class);
                 startActivity(intent);
             }
         });
 
-        tlUserProfileTabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+        btnEditProfile.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-               if(tab.getPosition() == 3) {
-                   sendEmail();
-               }
+            public void onClick(View view) {
+                finish();
+                Intent intent = new Intent(MainActivity.this, EditProfileActivity.class);
+                startActivity(intent);
             }
+        });
 
+        ivProfilePhoto.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
+            public void onClick(View v) {
 
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent = new Intent(Intent.ACTION_OPEN_DOCUMENT, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(Intent.createChooser(intent, "Select Profile Photo"), PICK_IMAGE_REQUEST);
             }
         });
     }
 
-    private void setupTabs() {
-        tlUserProfileTabs = (TabLayout) findViewById(R.id.tlUserProfileTabs);
-        tlUserProfileTabs.addTab(tlUserProfileTabs.newTab().setIcon(R.drawable.ic_location_on_white_24dp));
-        tlUserProfileTabs.addTab(tlUserProfileTabs.newTab().setIcon(R.drawable.ic_add));
-        tlUserProfileTabs.addTab(tlUserProfileTabs.newTab().setIcon(R.drawable.ic_today_white_24dp));
-        tlUserProfileTabs.addTab(tlUserProfileTabs.newTab().setIcon(R.drawable.ic_access_time_white_24dp));
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+
+            Uri uri = data.getData();
+            try {
+                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+
+                ivProfilePhoto.setImageBitmap(bitmap);
+                UserProfileModel userModel = SPUtil.readUserModel(this);
+                userModel.setImageString(uri.toString());
+                SPUtil.writeUserModel(this, userModel);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    private void sortedMap(){
-        TreeMap<Date, List<JobModel>> newMap = new TreeMap(Collections.reverseOrder());
-        newMap.putAll(jobMap);
-        jobMap = newMap;
+    private void setupProfile(){
+        UserProfileModel userModel = SPUtil.readUserModel(this);
+        if (userModel != null) {
+            tvUsername.setText(userModel.getFirstName() + " " + userModel.getLastName());
+            tvEmail.setText(userModel.getEmail());
+            tvRole.setText(userModel.getRole());
+            if (userModel.getImageString() != null){
+
+                try {
+                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(),
+                            Uri.parse(userModel.getImageString()));
+
+                    ivProfilePhoto.setImageBitmap(bitmap);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void setupTabs() {
+        tlUserProfileTabs.getTabAt(0).setIcon(R.drawable.ic_date_range_white_24dp);
+        tlUserProfileTabs.getTabAt(1).setIcon(R.drawable.ic_list_white_24dp);
+        tlUserProfileTabs.getTabAt(2).setIcon(R.drawable.ic_location_on_white_24dp);
+        tlUserProfileTabs.getTabAt(3).setIcon(R.drawable.ic_send_white_24dp);
     }
 
     private double calculateTodayHours(){
@@ -202,55 +195,5 @@ public class MainActivity extends BaseActivity {
         }
         return total;
     }
-
-    private TreeMap<Date, List<JobModel>> getWeeklyData(int weekOfYear){
-        TreeMap<Date, List<JobModel>> weeklyJobMap = new TreeMap<>();
-        List<JobModel> weeklyJobs;
-        Calendar c1 = Calendar.getInstance();
-        c1.setFirstDayOfWeek(Calendar.MONDAY);
-
-        for(Date date : jobMap.keySet()){
-            c1.setTime(date);
-
-            if (c1.get(Calendar.WEEK_OF_YEAR) == weekOfYear){
-                weeklyJobs = jobMap.get(date);
-                weeklyJobMap.put(date, weeklyJobs);
-            }
-        }
-        return weeklyJobMap;
-    }
-
-    public void sendEmail(){
-        String[] TO = {"yitianchang@gmail.com"};
-        String[] CC = {""};
-        String emailBody = EmailUtil.createEmailBody(); // create email body
-        EmailUtil.saveExcelFile(this, getWeeklyData(21)); // create email attachment
-
-        Intent emailIntent = new Intent(Intent.ACTION_SEND);
-        emailIntent.setData(Uri.parse("mailto:"));
-        emailIntent.setType("text/plain");
-        emailIntent.putExtra(Intent.EXTRA_EMAIL, TO);
-        emailIntent.putExtra(Intent.EXTRA_CC, CC);
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Weekly Timesheet from " + tvUsername.getText());
-        emailIntent.putExtra(Intent.EXTRA_TEXT, emailBody);
-        //emailIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-        File file = new File(this.getExternalFilesDir(null), "timesheet.xls");
-        if (!file.exists() || !file.canRead()) {
-            finish();
-            return;
-        }
-
-        Uri uri = Uri.parse("file://" + file);
-        emailIntent.putExtra(Intent.EXTRA_STREAM, uri);
-
-        try {
-            startActivity(Intent.createChooser(emailIntent, "Send mail..."));
-            //startActivity(emailIntent);
-        } catch (android.content.ActivityNotFoundException ex) {
-            Toast.makeText(MainActivity.this, "There is no email client installed.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
 
 }

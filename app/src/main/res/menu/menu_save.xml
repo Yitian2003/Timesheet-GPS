@@ -6,6 +6,11 @@
     android:gravity="end"
     android:layout_gravity="end">
     <item
+        android:id="@+id/action_delete"
+        android:title="Delete"
+        android:gravity="end"
+        app:showAsAction="always"/>
+    <item
         android:id="@+id/action_save"
         android:title="Save"
         android:gravity="end"

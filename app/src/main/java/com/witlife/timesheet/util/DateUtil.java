@@ -1,9 +1,13 @@
 package com.witlife.timesheet.util;
 
+import com.witlife.timesheet.model.JobModel;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.TreeMap;
 
 /**
  * Created by yitian on 6/05/2017.
@@ -137,5 +141,25 @@ public class DateUtil {
         c1.setTime(d1);
         c2.setTime(d2);
         return c1.get(Calendar.WEEK_OF_YEAR) == c2.get(Calendar.WEEK_OF_YEAR);
+    }
+
+    public static int getWeekNo(Date date){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        calendar.setTime(date);
+        return calendar.get(Calendar.WEEK_OF_YEAR);
+    }
+
+    public static String getRangeOfWeek(int weekNo){
+        Calendar calendar = Calendar.getInstance();
+        calendar.clear();
+        calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        calendar.set(Calendar.WEEK_OF_YEAR, weekNo);
+        calendar.set(Calendar.YEAR, 2017);
+        Date firstDate = calendar.getTime();
+
+        calendar.set(Calendar.DAY_OF_WEEK, 8);
+        Date lastDate = calendar.getTime();
+        return DateUtil.getDate(firstDate) + " - " + DateUtil.getDate(lastDate);
     }
 }

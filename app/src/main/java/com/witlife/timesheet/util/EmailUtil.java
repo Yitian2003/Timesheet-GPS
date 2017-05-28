@@ -1,15 +1,12 @@
 package com.witlife.timesheet.util;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.witlife.timesheet.activity.MainActivity;
 import com.witlife.timesheet.model.JobModel;
+import com.witlife.timesheet.model.UserProfileModel;
 
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -24,14 +21,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.TreeMap;
 
 /**
- * Created by bruce on 21/05/2017.
+ * Created by yitian on 21/05/2017.
  */
 
 public class EmailUtil {
@@ -40,7 +35,7 @@ public class EmailUtil {
     public static String createEmailBody() {
         StringBuilder builder = new StringBuilder();
         NumberFormat format = NumberFormat.getCurrencyInstance();
-
+        //builder.append(DateUtil.getRangeOfWeek(weekNo) + "\n");
         builder.append("The excel file is attached");
 
         return builder.toString();
@@ -48,9 +43,10 @@ public class EmailUtil {
 
     public static boolean saveExcelFile(Context context, TreeMap<Date, List<JobModel>> weeklyMap) {
 
+        UserProfileModel user = SPUtil.readUserModel(context);
+
         // check if available and not read only
         if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
-            //Log.e(TAG, "Storage not available or read only");
             return false;
         }
 
@@ -75,14 +71,14 @@ public class EmailUtil {
         c = row.createCell(0);
         c.setCellValue("Employee Name");
         c = row.createCell(1);
-        //c.setCellValue();
+        c.setCellValue(user.getFirstName() + " "+ user.getLastName());
 
         // Employee No.
         row = sheet1.createRow(1);
         c = row.createCell(0);
         c.setCellValue("Employee No.");
         c = row.createCell(1);
-        c.setCellValue("");
+        c.setCellValue(user.getEmployeeNo());
 
         // Week Ending
         row = sheet1.createRow(2);
@@ -133,7 +129,7 @@ public class EmailUtil {
         int j = 0;
         for (Date date : weeklyMap.keySet()) {
 
-            List<JobModel> jobModelList = new ArrayList<>();
+            List<JobModel> jobModelList;
             jobModelList = weeklyMap.get(date);
 
             for (int i = 0; i < jobModelList.size(); i++) {
@@ -161,7 +157,7 @@ public class EmailUtil {
             j += jobModelList.size();
         }
 
-        sheet1.setColumnWidth(0, (15 * 200));
+        sheet1.setColumnWidth(0, (15 * 300));
         sheet1.setColumnWidth(1, (15 * 200));
         sheet1.setColumnWidth(2, (15 * 200));
         sheet1.setColumnWidth(3, (15 * 200));

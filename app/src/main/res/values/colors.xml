@@ -19,4 +19,8 @@
     <color name="text_like_counter">#2b5a83</color>
     <color name="layout_bg">#e8ebed</color>
     <color name="bg_comments">#ffffff</color>
+
+    <color name="color_field_title">#9c9c9c</color>
+    <color name="color_field_value">#000000</color>
+    <color name="unfinish_job">#f2aba7</color>
 </resources>

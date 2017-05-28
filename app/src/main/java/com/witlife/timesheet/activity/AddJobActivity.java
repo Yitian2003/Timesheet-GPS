@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -17,6 +18,9 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.provider.Settings;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -33,10 +37,12 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.witlife.timesheet.R;
 import com.witlife.timesheet.model.JobModel;
 import com.witlife.timesheet.util.DateUtil;
+import com.witlife.timesheet.util.SPUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -70,6 +76,7 @@ public class AddJobActivity extends BaseActivity {
     TextView tvContract;
     ProgressBar progressBar;
     MenuItem btnSave;
+    MenuItem btnDelete;
 
     private LocationManager locationManager;
     private LocationListener locationListener;
@@ -78,9 +85,12 @@ public class AddJobActivity extends BaseActivity {
     private int position = -1;
     private List<JobModel> jobs;
     private TreeMap<Date, List<JobModel>> jobMap;
+    private boolean isHide = false;
     public static String SAVE_JOB_MODEL = "Job Model";
     public static String EDIT_JOB = "EDIT_JOB";
     public static String POSITION = "POSITION";
+    private static final int MY_PERMISSION_ACCESS_COARSE_LOCATION = 11;
+    private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 12;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,7 +124,6 @@ public class AddJobActivity extends BaseActivity {
         tvTotal = (TextView) findViewById(R.id.tvTotal);
         tvContract = (TextView) findViewById(R.id.tvContract);
         progressBar = (ProgressBar) findViewById(R.id.progressBar1);
-
     }
 
     private void initialView() {
@@ -135,32 +144,46 @@ public class AddJobActivity extends BaseActivity {
             jobModel.setDateString(DateUtil.getDate(currentDate));
             jobModel.setDayInWeek(DateUtil.getDayOfWeek(currentDate));
             jobModel.setStartTime(DateUtil.getTime(currentDate));
+
+            isHide = true;
+            invalidateOptionsMenu();
+            initialAppBar("Add Record");
         } else {
             position = getIntent().getIntExtra(POSITION, -1);
 
             editDate.setText(jobModel.getDateString());
             editStartTime.setText(jobModel.getStartTime());
-            if (!TextUtils.isEmpty(jobModel.getFinishTime())){
+            if (!TextUtils.isEmpty(jobModel.getFinishTime())) {
                 editFinishTime.setText(jobModel.getFinishTime());
             }
-            if (!TextUtils.isEmpty(jobModel.getLunch())){
+            if (!TextUtils.isEmpty(jobModel.getLunch())) {
                 editLunchMin.setText(jobModel.getLunch());
             }
-            if (!TextUtils.isEmpty(jobModel.getTotalHours())){
+            if (!TextUtils.isEmpty(jobModel.getTotalHours())) {
                 tvTotal.setText(jobModel.getTotalHours());
             }
-            if (!TextUtils.isEmpty(jobModel.getContractHours())){
+            if (!TextUtils.isEmpty(jobModel.getContractHours())) {
                 tvContract.setText(jobModel.getContractHours());
             }
-            if (!TextUtils.isEmpty(jobModel.getServiceHours())){
+            if (!TextUtils.isEmpty(jobModel.getServiceHours())) {
                 editServiceHours.setText(jobModel.getServiceHours());
             }
-            if (!TextUtils.isEmpty(jobModel.getJobCode())){
+            if (!TextUtils.isEmpty(jobModel.getJobCode())) {
                 editJobCode.setText(jobModel.getJobCode());
             }
-            if (!TextUtils.isEmpty(jobModel.getLocation())){
+            if (!TextUtils.isEmpty(jobModel.getLocation())) {
                 editLocation.setText(jobModel.getLocation());
             }
+            initialAppBar("Edit Record");
+        }
+        jobMap = SPUtil.readFromSharePreferences(getApplicationContext());
+    }
+
+    private void initialAppBar(String title) {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if(getSupportActionBar() != null){
+            getSupportActionBar().setTitle(title);
         }
     }
 
@@ -246,6 +269,18 @@ public class AddJobActivity extends BaseActivity {
                     progressBar.setVisibility(View.VISIBLE);
                     locationListener = new MyLocationListener();
 
+                    if (ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                        ActivityCompat.requestPermissions(AddJobActivity.this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION},
+                                MY_PERMISSION_ACCESS_COARSE_LOCATION);
+                    }
+
+                    if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(AddJobActivity.this,
+                                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                MY_PERMISSION_ACCESS_FINE_LOCATION);
+                    }
+
                     locationManager.requestLocationUpdates(LocationManager
                             .GPS_PROVIDER, 5000, 10, locationListener);
 
@@ -322,6 +357,11 @@ public class AddJobActivity extends BaseActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_save, menu);
         btnSave = menu.findItem(R.id.action_save);
+        btnDelete = menu.findItem(R.id.action_delete);
+        if (isHide) {
+            btnDelete.setVisible(false);
+        }
+
         return true;
     }
 
@@ -338,45 +378,46 @@ public class AddJobActivity extends BaseActivity {
                 jobModel.setLocation(editLocation.getText().toString());
                 jobModel.setDate(DateUtil.stringToDate(jobModel.getDayInWeek() + ", " + jobModel.getDateString()));
 
-                // read map data from share preference
-                SharedPreferences mPrefs = getApplicationContext().getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
-                String json = mPrefs.getString(SAVE_JOB_MODEL, "");
+                editAndCreateJob();
 
-                if (json.isEmpty()) {
-                    jobMap = new TreeMap();
-                    jobs = new ArrayList<>();
-                    jobs.add(jobModel);
-                    jobMap.put(jobModel.getDate(), jobs);
-                } else {
-
-                    ObjectMapper mapper = new ObjectMapper();
-                    try {
-                        jobMap = mapper.readValue(json,
-                                new TypeReference<TreeMap<Date, List<JobModel>>>() {
-                                });
-                    } catch (Exception e){
-                        e.printStackTrace();
-                    }
-                    // sort map data
-                    sortedMap();
-
-                    editAndCreateJob();
-                }
-
-                try {
-                    json = new ObjectMapper().writeValueAsString(jobMap);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                SharedPreferences.Editor prefsEditor = mPrefs.edit();
-                prefsEditor.putString(SAVE_JOB_MODEL, json);
-                prefsEditor.commit();
-
+                SPUtil.writeToSharePreferences(getApplicationContext(), jobMap);
+                finish();
                 Intent intent = new Intent(AddJobActivity.this, MainActivity.class);
-                intent.putExtra("JobModel", jobModel);
                 startActivity(intent);
+
                 return true;
+
+            case R.id.action_delete:
+
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.delete_confirm)
+                        .setMessage(R.string.delete_message)
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                if(jobMap != null && jobMap.size() > 0) {
+                                    List<JobModel> oldJobs = jobMap.get(getKeyInList());
+                                    if (oldJobs.size() == 1) {
+                                        jobMap.remove(getKeyInList());
+                                    } else {
+                                        oldJobs.remove(getPositionInList());
+                                    }
+
+                                    SPUtil.writeToSharePreferences(getApplicationContext(), jobMap);
+                                    finish();
+                                    Intent intent = new Intent(AddJobActivity.this, MainActivity.class);
+                                    startActivity(intent);
+                                } else {
+                                    Toast.makeText(AddJobActivity.this, "There is NO record to delete", Toast.LENGTH_SHORT);
+                                }
+                            }
+                        })
+                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .setIcon(R.drawable.ic_delete_alert)
+                        .show();
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -394,7 +435,7 @@ public class AddJobActivity extends BaseActivity {
         return null;
     }
 
-    private void editAndCreateJob(){
+    private void editAndCreateJob() {
         if (!jobMap.containsKey(jobModel.getDate())) {
             if (position != -1) {
                 // edit job to new date key
@@ -415,7 +456,7 @@ public class AddJobActivity extends BaseActivity {
                 jobMap.put(jobModel.getDate(), jobs);
             }
         } else {
-            if (position != -1){
+            if (position != -1) {
                 // edit job under same exist date key
                 if (getKeyInList().equals(jobModel.getDate())) {
                     jobs = jobMap.get(jobModel.getDate());
@@ -444,16 +485,16 @@ public class AddJobActivity extends BaseActivity {
         }
     }
 
-    private int getPositionInList(){
+    private int getPositionInList() {
         int i = -1;
         int j;
-        for(Entry<Date, List<JobModel>> en : jobMap.entrySet()){
+        for (Entry<Date, List<JobModel>> en : jobMap.entrySet()) {
             i++;
             j = -1;
-            for(JobModel obj : en.getValue()){
+            for (JobModel obj : en.getValue()) {
                 i++;
                 j++;
-                if (i == position){
+                if (i == position) {
                     return j;
                 }
             }
@@ -461,16 +502,16 @@ public class AddJobActivity extends BaseActivity {
         return -1;
     }
 
-    private Date getKeyInList(){
+    private Date getKeyInList() {
         int i = -1;
         int j;
-        for(Entry<Date, List<JobModel>> en : jobMap.entrySet()){
+        for (Entry<Date, List<JobModel>> en : jobMap.entrySet()) {
             i++;
             j = -1;
-            for(JobModel obj : en.getValue()){
+            for (JobModel obj : en.getValue()) {
                 i++;
                 j++;
-                if (i == position){
+                if (i == position) {
                     return en.getKey();
                 }
             }
@@ -528,7 +569,7 @@ public class AddJobActivity extends BaseActivity {
         }
     };
 
-    private void sortList(){
+    private void sortList() {
         Collections.sort(jobs, new Comparator<JobModel>() {
             @Override
             public int compare(JobModel job1, JobModel job2) {
@@ -590,8 +631,6 @@ public class AddJobActivity extends BaseActivity {
                 addresses = gcd.getFromLocation(loc.getLatitude(), loc
                         .getLongitude(), 1);
                 locationName = addresses.get(0).getAddressLine(0);
-                String[] parts = locationName.split(" ");
-                locationName = parts[0] + " " + parts[1] + parts[2];
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -611,12 +650,6 @@ public class AddJobActivity extends BaseActivity {
         public void onStatusChanged(String provider,
                                     int status, Bundle extras) {
         }
-    }
-
-    private void sortedMap(){
-        TreeMap<Date, List<JobModel>> newMap = new TreeMap(Collections.reverseOrder());
-        newMap.putAll(jobMap);
-        jobMap = newMap;
     }
 }
 

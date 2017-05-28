@@ -16,12 +16,12 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/rvJobList"
+        <android.support.v4.view.ViewPager
+            android:id="@+id/viewPager"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:paddingBottom="10dp"
+            android:layout_height="wrap_content"
             app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
 
         <android.support.design.widget.AppBarLayout
             android:id="@+id/appBarLayout"
@@ -61,6 +61,7 @@
                             android:layout_width="@dimen/user_profile_avatar_size"
                             android:layout_height="@dimen/user_profile_avatar_size"
                             android:layout_marginRight="16dp"
+                            android:clickable="true"
                             android:src="@drawable/ic_account" />
 
                         <LinearLayout
@@ -95,7 +96,7 @@
                                 android:textSize="12sp" />
 
                             <Button
-                                android:id="@+id/btnFollow"
+                                android:id="@+id/btnEditProfile"
                                 android:layout_width="match_parent"
                                 android:layout_height="24dp"
                                 android:layout_marginRight="24dp"
@@ -172,15 +173,16 @@
                     app:elevation="@dimen/default_elevation"
                     app:layout_collapseMode="pin"
                     app:layout_scrollFlags="scroll|enterAlways"
-                    app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" >
+                    app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+
                     <ImageView
                         android:id="@+id/ivLogo"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_gravity="center"
                         android:scaleType="center"
-                        android:visibility="invisible"/>
-                    </android.support.v7.widget.Toolbar>
+                        android:visibility="invisible" />
+                </android.support.v7.widget.Toolbar>
 
             </android.support.design.widget.CollapsingToolbarLayout>
 

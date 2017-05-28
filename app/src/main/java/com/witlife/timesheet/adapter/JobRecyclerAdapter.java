@@ -3,9 +3,11 @@ package com.witlife.timesheet.adapter;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.witlife.timesheet.R;
@@ -18,14 +20,14 @@ import java.util.List;
  * Created by yitian on 5/05/2017.
  */
 
-public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class JobRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private Context context;
     private List<ListItem> items;
     public static String EDIT_JOB = "EDIT_JOB";
     public static String POSITION = "POSITION";
 
-    public RecyclerAdapter (Context context, List<ListItem> items) {
+    public JobRecyclerAdapter (Context context, List<ListItem> items) {
         this.context = context;
         this.items = items;
     }
@@ -67,7 +69,11 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 holder.tvJobTime.setText(job.getStartTime() + "  " + job.getFinishTime());
                 holder.tvLunch.setText(job.getLunch());
                 holder.tvJobCode.setText(job.getJobCode());
-                holder.tvLocation.setText(job.getLocation());
+                String locations[] = job.getLocation().split(", ");
+                holder.tvLocation.setText(locations[0]);
+                if (TextUtils.isEmpty(job.getFinishTime()) || TextUtils.isEmpty(job.getLocation())) {
+                    holder.layoutJob.setBackgroundColor(context.getResources().getColor(R.color.unfinish_job));
+                }
                 break;
             }
             default:
@@ -100,6 +106,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         TextView tvLunch;
         TextView tvJobCode;
         TextView tvLocation;
+        LinearLayout layoutJob;
 
         JobViewHolder(View itemView) {
             super(itemView);
@@ -107,6 +114,7 @@ public class RecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             tvLunch = (TextView) itemView.findViewById(R.id.tvLunch);
             tvJobCode = (TextView) itemView.findViewById(R.id.tvJobCode);
             tvLocation = (TextView) itemView.findViewById(R.id.tvLocation);
+            layoutJob = (LinearLayout) itemView.findViewById(R.id.layoutJob);
 
             itemView.setOnClickListener(this);
         }
