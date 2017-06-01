@@ -146,6 +146,7 @@ public class DateUtil {
     public static int getWeekNo(Date date){
         Calendar calendar = Calendar.getInstance();
         calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         calendar.setTime(date);
         return calendar.get(Calendar.WEEK_OF_YEAR);
     }

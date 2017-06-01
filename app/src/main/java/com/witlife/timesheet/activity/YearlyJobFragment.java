@@ -32,6 +32,7 @@ public class YearlyJobFragment extends Fragment {
     JobRecyclerAdapter recyclerAdapter;
     List<ListItem> items;
     TreeMap<Date, List<JobModel>> jobMap = null;
+    private boolean IS_YEARLY = true;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstancState){
@@ -60,7 +61,7 @@ public class YearlyJobFragment extends Fragment {
 
         // set recycler adapter
         if (items != null) {
-            recyclerAdapter = new JobRecyclerAdapter(getContext(), items);
+            recyclerAdapter = new JobRecyclerAdapter(getContext(), items, IS_YEARLY);
             rvJobList.setAdapter(recyclerAdapter);
             rvJobList.setItemAnimator(new DefaultItemAnimator());
             LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);

@@ -136,7 +136,7 @@ public class EmailUtil {
                 JobModel jobModel = jobModelList.get(i);
                 row = sheet1.createRow(6 + i + j);
                 c = row.createCell(0);
-                c.setCellValue(jobModel.getDayInWeek());
+                c.setCellValue(jobModel.getDayInWeek() + ", " + jobModel.getDateString());
                 c = row.createCell(1);
                 c.setCellValue(jobModel.getStartTime());
                 c = row.createCell(2);
@@ -157,7 +157,7 @@ public class EmailUtil {
             j += jobModelList.size();
         }
 
-        sheet1.setColumnWidth(0, (15 * 300));
+        sheet1.setColumnWidth(0, (15 * 350));
         sheet1.setColumnWidth(1, (15 * 200));
         sheet1.setColumnWidth(2, (15 * 200));
         sheet1.setColumnWidth(3, (15 * 200));

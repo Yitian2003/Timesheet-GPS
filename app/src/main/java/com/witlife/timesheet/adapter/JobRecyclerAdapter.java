@@ -26,10 +26,13 @@ public class JobRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private List<ListItem> items;
     public static String EDIT_JOB = "EDIT_JOB";
     public static String POSITION = "POSITION";
+    private String IS_YEARLY = "IS_YEARLY";
+    private boolean isYearly;
 
-    public JobRecyclerAdapter (Context context, List<ListItem> items) {
+    public JobRecyclerAdapter (Context context, List<ListItem> items, boolean isYearly) {
         this.context = context;
         this.items = items;
+        this.isYearly = isYearly;
     }
 
     @Override
@@ -128,6 +131,7 @@ public class JobRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             JobModel job = jobItem.getJob();
             intent.putExtra(POSITION, position);
             intent.putExtra(EDIT_JOB, job);
+            intent.putExtra(IS_YEARLY, isYearly);
             context.startActivity(intent);
         }
     }

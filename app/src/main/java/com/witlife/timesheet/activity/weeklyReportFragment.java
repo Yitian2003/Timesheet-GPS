@@ -53,12 +53,17 @@ public class WeeklyReportFragment extends Fragment {
                 reportItems.add(weekNo);
             } else {
                 size = reportItems.size();
-                for (int i = 0; i < size; i++) {
+                int i;
 
-                    if (weekNo != reportItems.get(i)) {
-                        reportItems.add(weekNo);
+                for (i = 0; i < size; i++) {
+
+                    if (weekNo == reportItems.get(i)) {
                         break;
                     }
+                }
+
+                if (i==size) {
+                    reportItems.add(weekNo);
                 }
             }
         }

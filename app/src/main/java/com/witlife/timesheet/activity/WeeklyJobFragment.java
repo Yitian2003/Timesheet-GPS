@@ -35,6 +35,7 @@ public class WeeklyJobFragment extends Fragment {
     JobRecyclerAdapter recyclerAdapter;
     List<ListItem> items;
     TreeMap<Date, List<JobModel>> jobMap = null;
+    private boolean IS_YEARLY = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstancState){
@@ -51,16 +52,23 @@ public class WeeklyJobFragment extends Fragment {
         TreeMap<Date, List<JobModel>> weeklyJobMap = new TreeMap<>();
         List<JobModel> weeklyJobs;
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.setFirstDayOfWeek(Calendar.MONDAY);
         jobMap = SPUtil.readFromSharePreferences(getContext());
 
-        Date currentDate = Calendar.getInstance().getTime();
-        int weekOfYear = DateUtil.getWeekNo(currentDate);
+        Calendar calendar = Calendar.getInstance();
+        Date currentDate = calendar.getTime();
 
+        calendar.setTime(currentDate);
+        calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        int weekOfYear = calendar.get(Calendar.WEEK_OF_YEAR);
+
+        Calendar calendar2 = Calendar.getInstance();
         for(Date date : jobMap.keySet()){
-            calendar.setTime(date);
-            if ((calendar.get(Calendar.WEEK_OF_YEAR)) == weekOfYear){
+
+            calendar2.setTime(date);
+            calendar2.setFirstDayOfWeek(Calendar.MONDAY);
+            calendar2.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+            if ((calendar2.get(Calendar.WEEK_OF_YEAR)) == weekOfYear){
                 weeklyJobs = jobMap.get(date);
                 weeklyJobMap.put(date, weeklyJobs);
             }
@@ -83,7 +91,7 @@ public class WeeklyJobFragment extends Fragment {
 
         // set recycler adapter
         if (items != null) {
-            recyclerAdapter = new JobRecyclerAdapter(getContext(), items);
+            recyclerAdapter = new JobRecyclerAdapter(getContext(), items, IS_YEARLY);
             rvJobList.setAdapter(recyclerAdapter);
             rvJobList.setItemAnimator(new DefaultItemAnimator());
             LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);

@@ -89,6 +89,7 @@ public class AddJobActivity extends BaseActivity {
     public static String SAVE_JOB_MODEL = "Job Model";
     public static String EDIT_JOB = "EDIT_JOB";
     public static String POSITION = "POSITION";
+    private String IS_YEARLY = "IS_YEARLY";
     private static final int MY_PERMISSION_ACCESS_COARSE_LOCATION = 11;
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 12;
 
@@ -127,12 +128,13 @@ public class AddJobActivity extends BaseActivity {
     }
 
     private void initialView() {
-
         progressBar.setVisibility(View.INVISIBLE);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         jobModel = (JobModel) getIntent().getSerializableExtra(EDIT_JOB);
+
+        jobMap = SPUtil.readFromSharePreferences(getApplicationContext());
 
         if (jobModel == null) {
             jobModel = new JobModel();
@@ -148,6 +150,7 @@ public class AddJobActivity extends BaseActivity {
             isHide = true;
             invalidateOptionsMenu();
             initialAppBar("Add Record");
+
         } else {
             position = getIntent().getIntExtra(POSITION, -1);
 
@@ -175,8 +178,14 @@ public class AddJobActivity extends BaseActivity {
                 editLocation.setText(jobModel.getLocation());
             }
             initialAppBar("Edit Record");
+
+            boolean isYearly = getIntent().getBooleanExtra(IS_YEARLY, true);
+            if (!isYearly) {
+
+                position = convertWeeklyToYearlyPosition(position);
+            }
         }
-        jobMap = SPUtil.readFromSharePreferences(getApplicationContext());
+
     }
 
     private void initialAppBar(String title) {
@@ -426,9 +435,12 @@ public class AddJobActivity extends BaseActivity {
     @Override
     protected Dialog onCreateDialog(int id) {
         if (id == 999) {
-            int year = Calendar.getInstance().get(Calendar.YEAR);
-            int month = Calendar.getInstance().get(Calendar.MONTH);
-            int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
+            Calendar calendar = Calendar.getInstance();
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+            DatePickerDialog datePickerDialog = new DatePickerDialog(this, datePickerListener, year, month, day);
+            datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
             return new DatePickerDialog(this,
                     datePickerListener, year, month, day);
         }
@@ -551,6 +563,27 @@ public class AddJobActivity extends BaseActivity {
             double total = Double.parseDouble(tvTotal.getText().toString());
             tvContract.setText(String.format("%.1f", total - lunch));
         }
+    }
+
+    private int convertWeeklyToYearlyPosition(int positionInWeek){
+        Calendar calendar = Calendar.getInstance();
+        Date currentDate = calendar.getTime();
+        int weekNo = DateUtil.getWeekNo(currentDate);
+        int i = -1;
+        for(Date date : jobMap.keySet()){
+            i++;
+
+            Calendar calendar2 = Calendar.getInstance();
+            calendar2.setTime(date);
+            int compareNo = DateUtil.getWeekNo(date);
+            //calendar2.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+            if (weekNo == compareNo){
+                i += positionInWeek;
+                break;
+            }
+            i += jobMap.get(date).size();
+        }
+        return i;
     }
 
     private DatePickerDialog.OnDateSetListener datePickerListener = new DatePickerDialog.OnDateSetListener() {
