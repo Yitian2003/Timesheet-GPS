@@ -1,6 +1,6 @@
 # Timesheet-GPS
 <br>Using GPS locate work place</br>
-[![](https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png)](https://play.google.com/store/apps/details?id=com.witlife.timesheet)
+[![](https://owncloud.org/wp-content/themes/owncloudorgnew/assets/img/clients/buttons/googleplay.png)](https://play.google.com/store/apps/details?id=com.witlife.timesheet)
 <br>
 ![alt tag](https://github.com/Yitian2003/Timesheet-GPS/blob/master/demo.gif)
 </br>
