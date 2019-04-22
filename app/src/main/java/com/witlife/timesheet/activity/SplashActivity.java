@@ -23,7 +23,7 @@ public class SplashActivity extends AppCompatActivity {
         tvTitle = (TextView) findViewById(R.id.tvTitle);
         tvTitle1 = (TextView) findViewById(R.id.tvTitle1);
 
-        Typeface custom_font = Typeface.createFromAsset(getAssets(), "fonts/lobster_regular.ttf");
+        Typeface custom_font = Typeface.createFromAsset(getAssets(), "lobster_regular.ttf");
         tvTitle.setTypeface(custom_font);
         tvTitle1.setTypeface(custom_font);
 
