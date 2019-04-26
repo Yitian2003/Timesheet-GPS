@@ -1,5 +1,6 @@
 package com.witlife.timesheet.activity;
 
+import android.Manifest;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -9,6 +10,7 @@ import android.support.design.widget.TabLayout;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -49,6 +51,7 @@ public class MainActivity extends BaseActivity {
     FloatingActionButton btnAdd;
 
     private int PICK_IMAGE_REQUEST = 68;
+    protected final String contactPermission = Manifest.permission.READ_CONTACTS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,10 +147,17 @@ public class MainActivity extends BaseActivity {
             if (userModel.getImageString() != null){
 
                 try {
-                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(),
-                            Uri.parse(userModel.getImageString()));
+                    askPermissionFor(contactPermission);
+                    if (isPermissionGranted()) {
+                        Log.e("onClick", "Permission Granted!");
+                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(),
+                                Uri.parse(userModel.getImageString()));
 
-                    ivProfilePhoto.setImageBitmap(bitmap);
+                        ivProfilePhoto.setImageBitmap(bitmap);
+                    } else {
+                        requestPermission();
+                    }
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
