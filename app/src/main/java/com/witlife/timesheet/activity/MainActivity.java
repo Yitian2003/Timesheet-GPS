@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.TreeMap;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-
+// added comment to the new branch
 public class MainActivity extends BaseActivity {
 
     TabLayout tlUserProfileTabs;
